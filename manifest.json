@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Switchy - Dynamic Tab Switcher",
+  "version": "1.0.0",
+  "description": "Firefox-style dynamic tab switcher. Hold Ctrl+Q to see your recently used tabs and jump to any one instantly.",
+
+  "permissions": [
+    "tabs",
+    "storage",
+    "scripting",
+    "activeTab",
+    "favicon"
+  ],
+  "host_permissions": ["<all_urls>"],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["_favicon/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "commands": {
+    "open-switcher": {
+      "suggested_key": {
+        "default": "Ctrl+Q",
+        "mac": "Command+Q"
+      },
+      "description": "Open the tab switcher overlay / cycle to next recent tab"
+    }
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Switchy - Dynamic Tab Switcher",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

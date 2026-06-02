@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tab Switcher Dynamic</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 290px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      background: #12121a;
+      color: #e0e0e0;
+    }
+
+    /* ── Header ── */
+    .hd {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(76,159,254,.15), rgba(155,89,245,.1));
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #4c9ffe, #9b59f5);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .hd-text .name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .hd-text .sub {
+      font-size: 11px;
+      color: rgba(255,255,255,.4);
+    }
+
+    /* ── Sections ── */
+    .sec {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .sec-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: rgba(255,255,255,.3);
+      margin-bottom: 10px;
+    }
+
+    /* ── Shortcut rows ── */
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+    .row:last-child { margin-bottom: 0; }
+    .row-label { color: rgba(255,255,255,.65); }
+    .keys { display: flex; gap: 3px; align-items: center; }
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: 11px;
+      color: rgba(255,255,255,.6);
+      background: rgba(255,255,255,.08);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background .15s, border-color .15s;
+      margin-top: 10px;
+    }
+    .btn-primary {
+      background: rgba(76,159,254,.15);
+      border: 1px solid rgba(76,159,254,.35);
+      color: #4c9ffe;
+    }
+    .btn-primary:hover {
+      background: rgba(76,159,254,.25);
+      border-color: rgba(76,159,254,.55);
+    }
+
+    /* ── Note ── */
+    .note {
+      font-size: 11px;
+      color: rgba(255,255,255,.38);
+      line-height: 1.55;
+    }
+    .note a { color: #4c9ffe; text-decoration: none; cursor: pointer; }
+    .note a:hover { text-decoration: underline; }
+    .note kbd { font-size: 10px; }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 10px 16px;
+      font-size: 10px;
+      color: rgba(255,255,255,.2);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hd">
+    <div class="logo">⇥</div>
+    <div class="hd-text">
+      <div class="name">Tab Switcher Dynamic</div>
+      <div class="sub">Firefox-style MRU tab switcher</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">How to use</div>
+    <div class="row">
+      <span class="row-label">Open / cycle forward</span>
+      <span class="keys"><kbd>Ctrl</kbd><kbd>Q</kbd></span>
+    </div>
+    <div class="row">
+      <span class="row-label">Cycle backward</span>
+      <span class="keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Q</kbd></span>
+    </div>
+    <div class="row">
+      <span class="row-label">Navigate cards</span>
+      <span class="keys"><kbd>←</kbd><kbd>→</kbd>&nbsp; or &nbsp;<kbd>Tab</kbd></span>
+    </div>
+    <div class="row">
+      <span class="row-label">Jump to tab</span>
+      <span class="keys"><kbd>Enter</kbd></span>
+    </div>
+    <div class="row">
+      <span class="row-label">Cancel</span>
+      <span class="keys"><kbd>Esc</kbd></span>
+    </div>
+    <div class="row">
+      <span class="row-label">Release to jump</span>
+      <span class="keys"><kbd>Ctrl</kbd> keyup</span>
+    </div>
+    <button class="btn btn-primary" id="btn-shortcut">Change keyboard shortcut →</button>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Why not Ctrl+Tab?</div>
+    <p class="note">
+      Chrome reserves <kbd>Ctrl+Tab</kbd> at the browser level — no extension
+      can intercept it. The default here is <kbd>Ctrl+Q</kbd>. You can change
+      it at <a id="link-shortcuts">chrome://extensions/shortcuts</a>.
+    </p>
+  </div>
+
+  <div class="footer">Tab Switcher Dynamic v1.0.0</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
