@@ -23,10 +23,19 @@
   window.__tsd_injected = true;
 
   // ── State ───────────────────────────────────────────────────────────────────
-  let host   = null;
-  let shadow = null;
-  let tabs   = [];
-  let selIdx = 1;
+  let host          = null;
+  let shadow        = null;
+  let tabs          = [];
+  let selIdx        = 1;
+  let mouseHasMoved = false;   // true once mouse actually moves after overlay opens
+  let headless      = false;   // true when overlay is disabled — cycle silently, no DOM
+
+  // Bug fix: listen for Control keyup at all times (not just after open() completes).
+  // If the user releases Ctrl before the async message → open() chain finishes,
+  // the event would otherwise be missed and the overlay would stay stuck open.
+  document.addEventListener('keyup', (e) => {
+    if (isOpen() && (e.key === 'Control' || e.key === 'Meta')) commit();
+  }, true);
 
   // ── Message listener ────────────────────────────────────────────────────────
   // TSD_SHOW fires every time the user presses Ctrl+Q (the extension command).
@@ -38,21 +47,30 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'TSD_SHOW') {
       if (!isOpen()) {
-        open(msg.tabs);   // first press — show overlay, start at index 1
+        open(msg.tabs, msg.headless);   // first press — show overlay (or start headless cycle)
       } else {
-        move(+1);         // Ctrl still held, Q pressed again — cycle forward
+        move(+1);                       // Ctrl still held, Q pressed again — cycle forward
       }
     }
   });
 
   // ── Open ────────────────────────────────────────────────────────────────────
-  function isOpen() { return host !== null; }
+  function isOpen() { return host !== null || headless; }
 
-  function open(tabList) {
+  function open(tabList, isHeadless) {
     if (isOpen() || !tabList || tabList.length < 2) return;
 
-    tabs   = tabList;
-    selIdx = Math.min(1, tabs.length - 1);  // start at index 1, exactly like Firefox
+    tabs      = tabList;
+    selIdx    = Math.min(1, tabs.length - 1);
+    headless  = !!isHeadless;
+
+    if (headless) {
+      // No DOM — just track state and wait for Ctrl release or Enter.
+      // The always-on keyup listener (below) will call commit() on Ctrl release.
+      document.addEventListener('keydown', onKeyDown, true);
+      document.addEventListener('keyup',   onKeyUp,   true);
+      return;
+    }
 
     host = document.createElement('div');
     host.id = '__tsd_host';
@@ -68,16 +86,22 @@
     document.body.appendChild(host);
     document.body.style.overflow = 'hidden';
 
+    mouseHasMoved = false;
+
     shadow.querySelectorAll('.card').forEach((card, i) => {
       card.addEventListener('click',      () => { selIdx = i; commit(); });
-      card.addEventListener('mouseenter', () => { selIdx = i; updateHighlight(); });
+      // Only update selection on hover if the mouse has actually moved since the
+      // overlay opened — prevents phantom selection when the cursor happens to be
+      // sitting over a card at the moment the overlay appears.
+      card.addEventListener('mouseenter', () => { if (mouseHasMoved) { selIdx = i; updateHighlight(); } });
     });
     shadow.getElementById('backdrop').addEventListener('click', cancel);
 
     // Use plain boolean (true) instead of options object — avoids a subtle
     // removeEventListener mismatch bug in some Chrome versions.
-    document.addEventListener('keydown', onKeyDown, true);
-    document.addEventListener('keyup',   onKeyUp,   true);
+    document.addEventListener('keydown',   onKeyDown,   true);
+    document.addEventListener('keyup',     onKeyUp,     true);
+    document.addEventListener('mousemove', onMouseMove, true);
 
     requestAnimationFrame(scrollToSelected);
   }
@@ -85,11 +109,15 @@
   // ── Destroy ──────────────────────────────────────────────────────────────────
   function destroy() {
     if (!isOpen()) return;
-    document.removeEventListener('keydown', onKeyDown, true);
-    document.removeEventListener('keyup',   onKeyUp,   true);
-    document.body.style.overflow = '';
-    host.remove();
-    host = shadow = null;
+    document.removeEventListener('keydown',   onKeyDown,   true);
+    document.removeEventListener('keyup',     onKeyUp,     true);
+    document.removeEventListener('mousemove', onMouseMove, true);
+    if (host) {
+      document.body.style.overflow = '';
+      host.remove();
+      host = shadow = null;
+    }
+    headless = false;
     tabs = []; selIdx = 1;
   }
 
@@ -130,11 +158,12 @@
     }
   }
 
-  // Release Ctrl → commit  (the core Firefox "hold and release" behaviour)
-  function onKeyUp(e) {
-    if (!isOpen()) return;
-    if (e.key === 'Control' || e.key === 'Meta') commit();
-  }
+  function onMouseMove() { mouseHasMoved = true; }
+
+  // onKeyUp is intentionally empty — Ctrl release is handled by the always-on
+  // listener added at init time (above), which avoids a race where Ctrl is
+  // released before open() finishes and no listener exists yet.
+  function onKeyUp(_e) {}
 
   // ── Navigation ───────────────────────────────────────────────────────────────
   function move(delta) {

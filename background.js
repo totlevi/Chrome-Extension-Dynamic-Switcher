@@ -174,6 +174,13 @@ async function buildPayload(windowId) {
   return { tabs };
 }
 
+// ─── Settings helpers ─────────────────────────────────────────────────────────
+
+async function getSettings() {
+  const r = await chrome.storage.sync.get({ overlayEnabled: true });
+  return r;
+}
+
 // ─── Command: open the switcher ───────────────────────────────────────────────
 
 chrome.commands.onCommand.addListener(async (command) => {
@@ -185,12 +192,14 @@ chrome.commands.onCommand.addListener(async (command) => {
   const payload = await buildPayload(activeTab.windowId);
   if (payload.tabs.length < 2) return;
 
-  const sent = await sendToTab(activeTab.id, { type: 'TSD_SHOW', ...payload });
+  const { overlayEnabled } = await getSettings();
+
+  const sent = await sendToTab(activeTab.id, { type: 'TSD_SHOW', headless: !overlayEnabled, ...payload });
   if (!sent) {
     // Tab was open before the extension was installed — inject the content script now
     try {
       await chrome.scripting.executeScript({ target: { tabId: activeTab.id }, files: ['content.js'] });
-      await sendToTab(activeTab.id, { type: 'TSD_SHOW', ...payload });
+      await sendToTab(activeTab.id, { type: 'TSD_SHOW', headless: !overlayEnabled, ...payload });
     } catch {
       // Restricted page (chrome://, new tab, Web Store, PDF) — can't inject.
       // Fall back: jump directly to the most-recently-used other tab so the
